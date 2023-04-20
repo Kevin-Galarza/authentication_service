@@ -152,30 +152,34 @@ exports.resetPassword = async (req, res) => {
 };
 
 exports.refreshToken = async (req, res) => {
-  const { refreshToken } = req.body;
+  const refreshToken = req.body.refreshToken;
 
   if (!refreshToken) {
-    return res.status(400).json({ message: 'Refresh token is required' });
+    return res.status(400).json({ message: 'No refresh token provided' });
   }
 
   try {
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    const savedRefreshToken = await RefreshToken.findOne({ token: refreshToken, user: decoded.userId });
+    const user = await User.findById(decoded.userId);
 
-    if (!savedRefreshToken) {
-      return res.status(401).json({ message: 'Invalid refresh token' });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    const { accessToken, refreshToken: newRefreshToken } = generateTokens(decoded.userId);
+    const newAccessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_ACCESS_EXPIRES,
+    });
 
-    savedRefreshToken.token = newRefreshToken;
-    await savedRefreshToken.save();
-
-    res.status(200).json({ accessToken, refreshToken: newRefreshToken });
+    res.status(200).json({ accessToken: newAccessToken });
   } catch (error) {
-    res.status(401).json({ message: 'Invalid refresh token' });
+    if (error.name === 'TokenExpiredError') {
+      res.status(401).json({ message: 'Refresh token expired' });
+    } else {
+      res.status(500).json({ message: 'Error refreshing token' });
+    }
   }
 };
+
 
 exports.revokeRefreshToken = async (req, res) => {
   const { refreshToken } = req.body;
