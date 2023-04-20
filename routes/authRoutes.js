@@ -32,4 +32,7 @@ router.post("/reset-password/:token",
 ],
 authController.resetPassword);
 
+router.post('/refresh', authController.refreshToken);
+router.post('/revoke', authController.revokeRefreshToken);
+
 module.exports = router;

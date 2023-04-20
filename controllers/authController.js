@@ -2,11 +2,24 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const User = require("../models/userModel");
 const PasswordResetToken = require("../models/passwordResetTokenModel");
+const RefreshToken = require('../models/refreshTokenModel');
 const postmark = require("postmark");
 const client = new postmark.ServerClient(process.env.POSTMARK_API_KEY);
 
 const hashPassword = (password, salt) => {
   return crypto.pbkdf2Sync(password, salt, 1000, 64, "sha512").toString("hex");
+};
+
+const generateTokens = (userId) => {
+  const accessToken = jwt.sign({ userId }, process.env.JWT_SECRET, {
+    expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN,
+  });
+
+  const refreshToken = jwt.sign({ userId }, process.env.JWT_SECRET, {
+    expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN,
+  });
+
+  return { accessToken, refreshToken };
 };
 
 // Handle user registration
@@ -31,12 +44,11 @@ exports.register = async (req, res) => {
 
     const savedUser = await newUser.save();
 
-    // Generate JWT and return it as a response
-    const token = jwt.sign({ userId: savedUser._id }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    const { accessToken, refreshToken } = generateTokens(savedUser._id);
+    const newRefreshToken = new RefreshToken({ token: refreshToken, user: savedUser._id });
+    await newRefreshToken.save();
 
-    res.status(201).json({ token });
+    res.status(201).json({ accessToken, refreshToken });
   } catch (error) {
     res.status(500).json({ message: "Error registering user" });
   }
@@ -61,12 +73,11 @@ exports.login = async (req, res) => {
     const hashedPassword = hashPassword(password, user.salt);
 
     if (user.password === hashedPassword) {
-      // Generate JWT and return it as a response
-      const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-        expiresIn: "1h",
-      });
+      const { accessToken, refreshToken } = generateTokens(user._id);
+      const newRefreshToken = new RefreshToken({ token: refreshToken, user: user._id });
+      await newRefreshToken.save();
 
-      res.status(200).json({ token });
+      res.status(201).json({ accessToken, refreshToken });
     } else {
       res.status(401).json({ message: "Invalid username or password" });
     }
@@ -139,3 +150,50 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ message: "Error resetting password" });
   }
 };
+
+exports.refreshToken = async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(400).json({ message: 'Refresh token is required' });
+  }
+
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const savedRefreshToken = await RefreshToken.findOne({ token: refreshToken, user: decoded.userId });
+
+    if (!savedRefreshToken) {
+      return res.status(401).json({ message: 'Invalid refresh token' });
+    }
+
+    const { accessToken, refreshToken: newRefreshToken } = generateTokens(decoded.userId);
+
+    savedRefreshToken.token = newRefreshToken;
+    await savedRefreshToken.save();
+
+    res.status(200).json({ accessToken, refreshToken: newRefreshToken });
+  } catch (error) {
+    res.status(401).json({ message: 'Invalid refresh token' });
+  }
+};
+
+exports.revokeRefreshToken = async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(400).json({ message: 'Refresh token is required' });
+  }
+
+  try {
+    const deletedToken = await RefreshToken.findOneAndDelete({ token: refreshToken });
+
+    if (!deletedToken) {
+      return res.status(404).json({ message: 'Refresh token not found' });
+    }
+
+    res.status(200).json({ message: 'Refresh token revoked' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error revoking refresh token' });
+  }
+};
+

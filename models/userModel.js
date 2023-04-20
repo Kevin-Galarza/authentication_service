@@ -19,6 +19,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  resetPasswordToken: {
+    type: String,
+    default: null,
+  },
+  resetPasswordExpires: {
+    type: Date,
+    default: null,
+  }
   // Other fields (e.g., name, registration date, etc.) can be added here
 });
 
