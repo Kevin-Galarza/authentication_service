@@ -1,0 +1,16 @@
+# Node.js related
+node_modules/
+npm-debug.log
+
+# Environment variables
+.env
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
