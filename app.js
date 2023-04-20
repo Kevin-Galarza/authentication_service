@@ -5,17 +5,23 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 
 // Replace with your MongoDB connection string
-const mongoDBUrl = 'mongodb+srv://kgalarza:kHmj2fxe5VU5rNBz@deeptestcluster.kdfrt6z.mongodb.net/?retryWrites=true&w=majority';
+const mongoDBUrl = process.env.MONGODB_URI;
 
 mongoose.connect(mongoDBUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+
+const db = mongoose.connection;
+db.on('error', console.error.bind(console, 'MongoDB connection error:'));
+db.once('open', () => {
+  console.log('Connected to MongoDB');
+});
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 // Import and use the authentication routes
-const authRoutes = require('./routes/auth');
-app.use('/auth', authRoutes);
+const authRoutes = require('./routes/authRoutes');
+app.use('/', authRoutes);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
