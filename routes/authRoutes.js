@@ -2,8 +2,9 @@ const express = require("express");
 const router = express.Router();
 const authController = require("../controllers/authController");
 const { check, validationResult } = require('express-validator');
+const validateJwt = require('../middlewares/validateToken');
 
-// User registration route
+// USER REGISTRATION
 router.post(
   '/register',
   [
@@ -14,7 +15,7 @@ router.post(
   authController.register
 );
 
-// User login route
+// USER LOGIN
 router.post(
   '/login',
   [
@@ -24,15 +25,21 @@ router.post(
   authController.login
 );
 
+// USER FORGOT/RESET PASSWORD
 router.post("/forgot-password", authController.forgotPassword);
-
 router.post("/reset-password/:token", 
 [
   check('password', 'Password is required and must be a least 8 characters long').isLength({ min: 8 })
 ],
 authController.resetPassword);
 
+// JWT REFRESH
 router.post('/refresh', authController.refreshToken);
 router.post('/revoke', authController.revokeRefreshToken);
+
+// JWT VALIDATION
+router.post('/validate', validateJwt, (req, res) => {
+  res.status(200).json({ userId: req.userId });
+});
 
 module.exports = router;

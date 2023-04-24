@@ -2,8 +2,9 @@
   "name": "authentication_service",
   "version": "1.0.0",
   "description": "authentication service for Deep app",
-  "main": "main.js",
+  "main": "app.js",
   "scripts": {
+    "start": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const User = require("../models/userModel");
 const PasswordResetToken = require("../models/passwordResetTokenModel");
 const RefreshToken = require('../models/refreshTokenModel');
+const { validationResult } = require("express-validator");
 const postmark = require("postmark");
 const client = new postmark.ServerClient(process.env.POSTMARK_API_KEY);
 
