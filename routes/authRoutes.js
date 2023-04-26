@@ -8,6 +8,7 @@ const validateJwt = require('../middlewares/validateToken');
 router.post(
   '/register',
   [
+    check('role').optional().isIn(['admin', 'customer']).withMessage('Invalid user role'),
     check('username', 'Username is required').notEmpty(),
     check('email', 'Email is required').isEmail(),
     check('password', 'Password is required and must be at least 8 characters long').isLength({ min: 8 })

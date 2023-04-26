@@ -11,12 +11,12 @@ const hashPassword = (password, salt) => {
   return crypto.pbkdf2Sync(password, salt, 1000, 64, "sha512").toString("hex");
 };
 
-const generateTokens = (userId) => {
-  const accessToken = jwt.sign({ userId }, process.env.JWT_SECRET, {
+const generateTokens = (userId, role) => {
+  const accessToken = jwt.sign({ userId, role }, process.env.JWT_SECRET, {
     expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN,
   });
 
-  const refreshToken = jwt.sign({ userId }, process.env.JWT_SECRET, {
+  const refreshToken = jwt.sign({ userId, role }, process.env.JWT_SECRET, {
     expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN,
   });
 
@@ -30,13 +30,14 @@ exports.register = async (req, res) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { username, email, password } = req.body;
+  const { role, username, email, password } = req.body;
 
   try {
     const salt = crypto.randomBytes(16).toString("hex");
     const hashedPassword = hashPassword(password, salt);
 
     const newUser = new User({
+      role,
       username,
       email,
       password: hashedPassword,
@@ -167,7 +168,7 @@ exports.refreshToken = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const newAccessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+    const newAccessToken = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_ACCESS_EXPIRES,
     });
 
