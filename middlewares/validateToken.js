@@ -13,6 +13,7 @@ const validateToken = (req, res, next) => {
     // Verify the token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
+    console.log(req.user);
     next();
   } catch (error) {
     res.status(400).json({ message: 'Invalid token' });

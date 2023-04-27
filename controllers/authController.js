@@ -46,7 +46,7 @@ exports.register = async (req, res) => {
 
     const savedUser = await newUser.save();
 
-    const { accessToken, refreshToken } = generateTokens(savedUser._id);
+    const { accessToken, refreshToken } = generateTokens(savedUser._id, savedUser.role);
     const newRefreshToken = new RefreshToken({ token: refreshToken, user: savedUser._id });
     await newRefreshToken.save();
 
@@ -75,7 +75,7 @@ exports.login = async (req, res) => {
     const hashedPassword = hashPassword(password, user.salt);
 
     if (user.password === hashedPassword) {
-      const { accessToken, refreshToken } = generateTokens(user._id);
+      const { accessToken, refreshToken } = generateTokens(user._id, user.role);
       const newRefreshToken = new RefreshToken({ token: refreshToken, user: user._id });
       await newRefreshToken.save();
 

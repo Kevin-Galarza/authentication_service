@@ -39,8 +39,13 @@ router.post('/refresh', authController.refreshToken);
 router.post('/revoke', authController.revokeRefreshToken);
 
 // JWT VALIDATION
+// router.post('/validate', validateJwt, (req, res) => {
+//   res.status(200).json({ userId: req.userId });
+// });
+// JWT VALIDATION
 router.post('/validate', validateJwt, (req, res) => {
-  res.status(200).json({ userId: req.userId });
+  res.status(200).json({ userId: req.user.id, role: req.user.role });
 });
+
 
 module.exports = router;
