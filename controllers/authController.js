@@ -16,7 +16,7 @@ const generateTokens = (userId, role) => {
     expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN,
   });
 
-  const refreshToken = jwt.sign({ userId, role }, process.env.JWT_SECRET, {
+  const refreshToken = jwt.sign({ userId, role }, process.env.JWT_REFRESH_SECRET, {
     expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN,
   });
 
@@ -169,7 +169,7 @@ exports.refreshToken = async (req, res) => {
     }
 
     const newAccessToken = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_ACCESS_EXPIRES,
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN,
     });
 
     res.status(200).json({ accessToken: newAccessToken });
@@ -177,6 +177,7 @@ exports.refreshToken = async (req, res) => {
     if (error.name === 'TokenExpiredError') {
       res.status(401).json({ message: 'Refresh token expired' });
     } else {
+      console.log(error);
       res.status(500).json({ message: 'Error refreshing token' });
     }
   }
