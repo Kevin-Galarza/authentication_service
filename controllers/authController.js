@@ -88,6 +88,7 @@ exports.login = async (req, res) => {
   }
 };
 
+// TODO: consider security posture of this endpoint
 // Handle user forgot password
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
@@ -111,7 +112,7 @@ exports.forgotPassword = async (req, res) => {
       To: user.email,
       TemplateId: your_template_id,
       TemplateModel: {
-        reset_link: `http://localhost:3000/reset-password/${token}`,
+        reset_link: `http://localhost:3000/reset-password/${token}`, // TODO: swap out url for env var
       },
     });
 
@@ -161,6 +162,12 @@ exports.refreshToken = async (req, res) => {
   }
 
   try {
+    // Check if refresh token exists in the database
+    const tokenDocument = await RefreshToken.findOne({ token: refreshToken });
+    if (!tokenDocument) {
+      return res.status(401).json({ message: 'Refresh token is invalid or has been revoked' });
+    }
+
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
     const user = await User.findById(decoded.userId);
 
@@ -182,7 +189,6 @@ exports.refreshToken = async (req, res) => {
     }
   }
 };
-
 
 exports.revokeRefreshToken = async (req, res) => {
   const { refreshToken } = req.body;
